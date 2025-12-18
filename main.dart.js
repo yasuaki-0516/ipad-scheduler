@@ -20348,7 +20348,7 @@ $iBi:1}
 A.a5R.prototype={
 $1(a){var s=A.c6().b
 s=s==null?null:s.canvasKitBaseUrl
-return(s==null?"https://www.gstatic.com/flutter-canvaskit/1527ae0ec577a4ef50e65f6fefcfc1326707d9bf/":s)+a},
+return(s==null?"https://unpkg.com/canvaskit-wasm@0.37.1/bin/":s)+a},
 $S:144}
 A.DW.prototype={
 gxK(){var s=this.b
