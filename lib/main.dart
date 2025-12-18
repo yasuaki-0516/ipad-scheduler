@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:signature/signature.dart';
 
 void main() => runApp(const MyApp());
 
@@ -14,100 +15,88 @@ class MyApp extends StatelessWidget {
   }
 }
 
-class DailyScheduler extends StatelessWidget {
+class DailyScheduler extends StatefulWidget {
   const DailyScheduler({super.key});
+  @override
+  State<DailyScheduler> createState() => _DailySchedulerState();
+}
+
+class _DailySchedulerState extends State<DailyScheduler> {
+  // 手書き用コントローラー
+  final SignatureController _controller = SignatureController(
+    penStrokeWidth: 2,
+    penColor: Colors.black,
+    exportBackgroundColor: Colors.transparent,
+  );
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      backgroundColor: Colors.white,
       appBar: AppBar(
-        title: const Text('12月18日(木) - Daily'),
+        title: const Text('2025年12月18日'),
         actions: [
-          IconButton(icon: const Icon(Icons.view_week), onPressed: () {}), // 週間切り替え用
+          IconButton(icon: const Icon(Icons.clear), onPressed: () => _controller.clear()), // 手書き消去
         ],
       ),
       body: Row(
         children: [
-          // --- 左側：1日のバーチカル (6:00 - 22:00) ---
-          Expanded(
-            flex: 2, // 画面の40%
-            child: Container(
-              decoration: BoxDecoration(border: Border(right: BorderSide(color: Colors.grey.shade300))),
-              child: ListView.builder(
-                itemCount: 17, // 22 - 6 + 1
-                itemBuilder: (context, index) {
-                  int hour = index + 6;
-                  return Container(
-                    height: 60, // 1時間を60ピクセルで表現
-                    decoration: BoxDecoration(border: Border(bottom: BorderSide(color: Colors.grey.shade100))),
-                    child: Row(
-                      children: [
-                        SizedBox(
-                          width: 50,
-                          child: Center(child: Text('$hour:00', style: const TextStyle(fontSize: 12, color: Colors.grey))),
-                        ),
-                        Expanded(
-                          child: Container(
-                            margin: const EdgeInsets.symmetric(vertical: 2, horizontal: 4),
-                            // ここに予定データがあれば着色するロジックを入れます
-                            color: (hour == 9 || hour == 10) ? Colors.blue.withOpacity(0.2) : null,
-                            child: (hour == 9) ? const Text(' 講義：プログラミング') : null,
-                          ),
-                        ),
-                      ],
-                    ),
-                  );
-                },
-              ),
+          // --- 左側：バーチカル時間軸 (PDFの構成を再現) ---
+          Container(
+            width: 80,
+            decoration: BoxDecoration(border: Border(right: BorderSide(color: Colors.grey.shade300))),
+            child: ListView.builder(
+              itemCount: 17, // 6時から22時まで
+              itemBuilder: (context, index) {
+                int hour = index + 6;
+                return Container(
+                  height: 60,
+                  alignment: Alignment.topCenter,
+                  padding: const EdgeInsets.only(top: 8),
+                  decoration: BoxDecoration(border: Border(bottom: BorderSide(color: Colors.grey.shade100))),
+                  child: Text('$hour', style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w500)),
+                );
+              },
             ),
           ),
 
-          // --- 右側：Todoリスト & メモエリア ---
+          // --- 右側：ToDo List & 手書きエリア ---
           Expanded(
-            flex: 3, // 画面の60%
-            child: Padding(
-              padding: const EdgeInsets.all(16.0),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  const Text('TODO LIST', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 18)),
-                  const Divider(),
-                  Expanded(
-                    child: ListView(
-                      children: const [
-                        TodoItem(task: 'レポート提出'),
-                        TodoItem(task: 'お昼の買い出し'),
-                        TodoItem(task: 'iPad miniの充電'),
-                        SizedBox(height: 20),
-                        Text('FREE MEMO', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 18)),
-                        Divider(),
-                        TextField(
-                          maxLines: 10,
-                          decoration: InputDecoration(hintText: '自由にメモを書いてください', border: InputBorder.none),
-                        ),
-                      ],
+            child: Stack(
+              children: [
+                // 下層：ToDoリストの項目（PDF風）
+                Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    const Padding(
+                      padding: EdgeInsets.all(16.0),
+                      child: Text('ToDo List', style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold)),
                     ),
-                  ),
-                ],
-              ),
+                    Expanded(
+                      child: ListView.separated(
+                        itemCount: 15,
+                        separatorBuilder: (context, index) => const Divider(height: 40),
+                        itemBuilder: (context, index) => const SizedBox(height: 10),
+                      ),
+                    ),
+                  ],
+                ),
+                // 上層：手書きキャンバス（全体を覆う）
+                Signature(
+                  controller: _controller,
+                  backgroundColor: Colors.transparent,
+                ),
+              ],
             ),
           ),
         ],
       ),
-    );
-  }
-}
-
-class TodoItem extends StatelessWidget {
-  final String task;
-  const TodoItem({super.key, required this.task});
-  @override
-  Widget build(BuildContext context) {
-    return CheckboxListTile(
-      title: Text(task),
-      value: false,
-      onChanged: (bool? value) {},
-      controlAffinity: ListTileControlAffinity.leading,
     );
   }
 }
