@@ -22,12 +22,18 @@ class DailyScheduler extends StatefulWidget {
 }
 
 class _DailySchedulerState extends State<DailyScheduler> {
-  // 手書き用コントローラー
-  final SignatureController _controller = SignatureController(
-    penStrokeWidth: 2,
-    penColor: Colors.black,
-    exportBackgroundColor: Colors.transparent,
-  );
+  // 手書き用コントローラーの最適化
+  late final SignatureController _controller;
+
+  @override
+  void initState() {
+    super.initState();
+    _controller = SignatureController(
+      penStrokeWidth: 2,
+      penColor: Colors.black,
+      exportBackgroundColor: Colors.transparent,
+    );
+  }
 
   @override
   void dispose() {
@@ -42,17 +48,21 @@ class _DailySchedulerState extends State<DailyScheduler> {
       appBar: AppBar(
         title: const Text('2025年12月18日'),
         actions: [
-          IconButton(icon: const Icon(Icons.clear), onPressed: () => _controller.clear()), // 手書き消去
+          IconButton(
+            icon: const Icon(Icons.clear), 
+            onPressed: () => _controller.clear()
+          ),
         ],
       ),
       body: Row(
         children: [
-          // --- 左側：バーチカル時間軸 (PDFの構成を再現) ---
+          // 左側：バーチカル時間軸
           Container(
             width: 80,
             decoration: BoxDecoration(border: Border(right: BorderSide(color: Colors.grey.shade300))),
             child: ListView.builder(
-              itemCount: 17, // 6時から22時まで
+              physics: const NeverScrollableScrollPhysics(), // スクロールによる遅延を防止
+              itemCount: 17,
               itemBuilder: (context, index) {
                 int hour = index + 6;
                 return Container(
@@ -66,11 +76,11 @@ class _DailySchedulerState extends State<DailyScheduler> {
             ),
           ),
 
-          // --- 右側：ToDo List & 手書きエリア ---
+          // 右側：ToDo List & 手書きエリア
           Expanded(
             child: Stack(
               children: [
-                // 下層：ToDoリストの項目（PDF風）
+                // 下層：ToDoリストのガイド線
                 Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
@@ -80,6 +90,7 @@ class _DailySchedulerState extends State<DailyScheduler> {
                     ),
                     Expanded(
                       child: ListView.separated(
+                        physics: const NeverScrollableScrollPhysics(),
                         itemCount: 15,
                         separatorBuilder: (context, index) => const Divider(height: 40),
                         itemBuilder: (context, index) => const SizedBox(height: 10),
@@ -87,10 +98,14 @@ class _DailySchedulerState extends State<DailyScheduler> {
                     ),
                   ],
                 ),
-                // 上層：手書きキャンバス（全体を覆う）
-                Signature(
-                  controller: _controller,
-                  backgroundColor: Colors.transparent,
+                // 上層：高感度設定のSignature
+                Positioned.fill(
+                  child: Signature(
+                    controller: _controller,
+                    backgroundColor: Colors.transparent,
+                    // 以下のプロパティを調整して感度を最大化
+                    dynamicPressureSupported: true, // Apple Pencilの圧力を受け取る
+                  ),
                 ),
               ],
             ),
